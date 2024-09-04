@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      // Add your path mappings here
+    }
+  },
+  "exclude": ["node_modules", "dist", "web-ext-artifacts"]
+}

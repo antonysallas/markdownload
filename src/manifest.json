@@ -12,14 +12,7 @@
     "192": "icons/favicon-192x192.png",
     "512": "icons/favicon-512x512.png"
   },
-  "permissions": [
-    "<all_urls>",
-    "activeTab",
-    "downloads",
-    "storage",
-    "contextMenus",
-    "clipboardWrite"
-  ],
+  "permissions": ["<all_urls>", "activeTab", "downloads", "storage", "contextMenus", "clipboardWrite"],
   "browser_action": {
     "default_title": "MarkDownload",
     "default_popup": "popup/popup.html",
@@ -85,7 +78,6 @@
     "copy_tab_to_obsidian": {
       "description": "Copy current tab as Markdown to Obsidian"
     }
-    
   },
   "browser_specific_settings": {
     "gecko": {
