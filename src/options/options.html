@@ -47,10 +47,15 @@
             <p>
                 Additionally, you can 'parameterize' any of the text variables (other than date and keywords) by using the following syntax:
                 <ul>
+                    <li><code>{variable:lower}</code> - lower case: Every word lower case</li>
+                    <li><code>{variable:upper}</code> - UPPER CASE: Every word upper case</li>
                     <li><code>{variable:pascal}</code> - PascalCase: Every word capital</li>
                     <li><code>{variable:camel}</code> - camelCase: every word capital except the first word</li>
                     <li><code>{variable:kebab}</code> - kebab-case: hyphens between words, all lowercase</li>
+                    <li><code>{variable:mixed-kebab}</code> - kebab-case: hyphens between words, no case changes</li>
                     <li><code>{variable:snake}</code> - snake_case: underscores between words, all lowercase</li>
+                    <li><code>{variable:mixed_snake}</code> - snake_case: underscores between words, no case changes</li>
+                    <li><code>{variable:obsidian-cal}</code> - Compatibility for Obsidan Custom Attachment Location: hyphens between words, no case changes, double hypens removed</li>
                 </ul>
             </p>
         </small>
@@ -59,14 +64,14 @@
     <h3>Title template</h3>
     <div class="textbox-container">
         <label for="title">Template for title/filename</label>
-        <input type="text" id="title" name="title"/>
+        <input type="text" id="title" name="title" role="textbox" />
     </div>
 
     <br />
 
     <div class="textbox-container" id="mdClipsFolder">
-        <label for="mdClipsFolder">Folder inside <code>Downloads/</code> to store MarkDownload Clips:</label>
-        <input type="text" name="mdClipsFolder"/>
+        <label for="mdClipsFolder">Folder inside <code>Downloads/</code> to store MarkDownload clips:</label>
+        <input type="text" name="mdClipsFolder" role="textbox" />
     </div>
 
     <br />
@@ -77,24 +82,23 @@
     </div>
 
     <br />
-
     <div class="textbox-container">
         <label for="disallowedChars">Disallowed Characters (to strip out of title/filename —
             in addition to <code>/</code>, <code>?</code>, <code>&lt;</code>, <code>&gt;</code>, <code>\</code>,
             <code>:</code>, <code>*</code>, <code>|</code>, <code>"</code>)</label>
-        <input type="text" id="disallowedChars" name="disallowedChars"/>
+        <input type="text" id="disallowedChars" name="disallowedChars" role="textbox" />
     </div>
-
+    
     <h3>Front-matter template</h3>
     <div class="textbox-container">
         <label for="frontmatter">Enter the text here that should appear at the top of the output file.</label> <br />
-        <div class="input-sizer"><textarea name="frontmatter" id="frontmatter" class="textarea"></textarea></div>
+        <div class="input-sizer"><textarea name="frontmatter" id="frontmatter" class="textarea" role="textbox"></textarea></div>
     </div>
 
     <h3>Back-matter template</h3>
     <div class="textbox-container">
         <label for="backmatter">Enter the text here that should appear at the bottom of the output file.</label> <br />
-        <div class="input-sizer"><textarea name="backmatter" id="backmatter" class="textarea"></textarea></div>
+        <div class="input-sizer"><textarea name="backmatter" id="backmatter" class="textarea" role="textbox"></textarea></div>
     </div>
 
     <div class="checkbox-container">
@@ -128,9 +132,9 @@ More information:  <a href="https://vinzent03.github.io/obsidian-advanced-uri/">
 
         <div class="textbox-container" id="obsidianVault">
             <label for="obsidianVault">Obsidian Vault Name: </label>
-            <input type="text" name="obsidianVault"placeholder="If blank, it will use the main Vault. Please specify it." />
+            <input type="text" name="obsidianVault" role="textbox" placeholder="If blank, it will use the main Vault. Please specify it." />
             <label for="obsidianFolder">Obsidian Folder Name: </label>
-            <input type="text" name="obsidianFolder"placeholder="Enter Folder Name eg. Clippers"/>
+            <input type="text" name="obsidianFolder" role="textbox" placeholder="Enter Folder Name eg. Clippers"/>
         </div>
 
         <br />
@@ -146,7 +150,25 @@ More information:  <a href="https://vinzent03.github.io/obsidian-advanced-uri/">
             <label for="downloadsApi">Downloads API (recommended)</label>
             <input type="radio" name="downloadMode" id="contentLink" value="contentLink" />
             <label for="contentLink">Content Link</label>
-
+            <!-- <input type="radio" name="downloadMode" id="obsidianUri" value="obsidianUri" />
+            <label for="obsidianUri">Obsidian URI (obsidian://new)</label> -->
+        </div>
+        <!-- <div id="obsidianUriGroup">
+            <div class="textbox-container" id="obsidianVault">
+                <label for="obsidianVault">Obsidian vault name: </label>
+                <input type="text" name="obsidianVault" role="textbox" />
+            </div>
+            <div class="radio-container" id="obsidianPathType">
+                <h3>Obsidian Path Type</h3>
+                <input type="radio" name="obsidianPathType" id="name" value="name" />
+                <label for="name"><span>Relative to default note folder</span>
+                </label>
+                <input type="radio" name="obsidianPathType" id="file" value="file" />
+                <label for="file"><span>Relative to vault root</span>
+                    <small>Requires Obsidian 0.11.1 or higher</small>
+                </label>
+            </div>
+        </div> -->
         <div id="downloadModeGroup">
             <div class="checkbox-container" id="saveAs-container">
                 <input name="saveAs" id="saveAs" type="checkbox" />
@@ -162,7 +184,7 @@ More information:  <a href="https://vinzent03.github.io/obsidian-advanced-uri/">
 
             <div class="textbox-container" id="imagePrefix">
                 <label for="imagePrefix">Image filename prefix template: </label>
-                <input type="text" name="imagePrefix"/>
+                <input type="text" name="imagePrefix" role="textbox" />
             </div>
         </div>
     </div>
@@ -287,7 +309,7 @@ const helloWorld = () => {
 [Google]: http://google.com</pre>
         </label>
     </div>
-
+    
     <div class="radio-container" id="imageOptions">
         <h3>Image Style</h3>
         <input type="radio" name="imageStyle" id="originalSource" value="originalSource" />
@@ -336,7 +358,7 @@ const helloWorld = () => {
         <input name="turndownEscape" id="turndownEscape" type="checkbox" />
         <label for="turndownEscape">Escape Markdown Characters
             <p><small>
-                By default, backslashes (<code>\</code>) are used to escape
+                By default, backslashes (<code>\</code>) are used to escape 
                 Markdown characters in the HTML input. This ensures that these
                 characters are not interpreted as Markdown. For example, the
                 contents of <code>&lt;h1&gt;1. Hello world&lt;/h1&gt;</code>
@@ -348,7 +370,7 @@ const helloWorld = () => {
     </div>
 
     <hr>
-
+    
     <h2>Import / Export</h2>
 
     <div class="button-container">

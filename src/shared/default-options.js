@@ -1,7 +1,7 @@
 // these are the default options
 const defaultOptions = {
   headingStyle: "atx",
-  hr: "- ---",
+  hr: "___",
   bulletListMarker: "-",
   codeBlockStyle: "fenced",
   fence: "```",
@@ -11,8 +11,6 @@ const defaultOptions = {
   linkReferenceStyle: "full",
   imageStyle: "markdown",
   imageRefStyle: "inlined",
-  // frontmatter:
-  //   "---\ncreated: {date:YYYY-MM-DDTHH:mm:ss} (UTC {date:Z})\ntags: [{keywords}]\nsource: {baseURI}\nauthor: {byline}\n---\n\n# {pageTitle}\n\n> ## Excerpt\n> {excerpt}\n\n---",
   frontmatter: `
 title:: {title}
 date:: [[{lsDate}]]
@@ -23,19 +21,18 @@ author:: [[{byline}]]
 location:: {lsLocation}
 ---
 
-- # {pageTitle}
+- ## Excerpt
+  > {excerpt}
 
-  - ## Excerpt
-    > {excerpt}
-  - ---\n`,
+  - ---\n\n`,
   backmatter: "",
-  title: "{date:YYYYDDMMhhmmss}_{pageTitle}",
-  includeTemplate: true,
+  title: "{pageTitle}",
+  includeTemplate: false,
   saveAs: false,
-  downloadImages: true,
-  imagePrefix: "assets/articles/",
-  mdClipsFolder: "pages/",
-  mdAssetsFolder: "assets/",
+  downloadImages: false,
+  imagePrefix: "{pageTitle}/",
+  mdClipsFolder: null,
+  mdAssetsFolder: null,
   disallowedChars: "[]#^",
   downloadMode: "downloadsApi",
   turndownEscape: true,

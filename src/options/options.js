@@ -33,6 +33,7 @@ const saveOptions = (e) => {
     imageStyle: getCheckedValue(document.querySelectorAll("input[name='imageStyle']")),
     imageRefStyle: getCheckedValue(document.querySelectorAll("input[name='imageRefStyle']")),
     downloadMode: getCheckedValue(document.querySelectorAll("input[name='downloadMode']")),
+    // obsidianPathType: getCheckedValue(document.querySelectorAll("input[name='obsidianPathType']")),
   };
 
   save();
@@ -138,6 +139,7 @@ const setCurrentChoice = (result) => {
   setCheckedValue(document.querySelectorAll("[name='imageStyle']"), options.imageStyle);
   setCheckedValue(document.querySelectorAll("[name='imageRefStyle']"), options.imageRefStyle);
   setCheckedValue(document.querySelectorAll("[name='downloadMode']"), options.downloadMode);
+  // setCheckedValue(document.querySelectorAll("[name='obsidianPathType']"), options.obsidianPathType);
 
   refereshElements();
 };
@@ -171,7 +173,6 @@ const refereshElements = () => {
   //     show(container, options.downloadMode == 'obsidianUri')
   // });
   show(document.getElementById("mdClipsFolder"), options.downloadMode == "downloadsApi");
-  show(document.getElementById("mdAssetsFolder"), options.downloadMode == "downloadsApi");
 
   show(document.getElementById("linkReferenceStyle"), options.linkStyle == "referenced");
 
@@ -247,7 +248,7 @@ const buttonClick = (e) => {
     browser.downloads.download({
       url: url,
       saveAs: true,
-      filename: `markdownload_export_${datestring}.json`,
+      filename: `MarkDownload-export-${datestring}.json`,
     });
   }
 };

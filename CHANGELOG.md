@@ -1,4 +1,18 @@
 # Changelog
+## 3.4.0
+- Fixed extra spaces in titles which could cause issues (thanks @rickdoesdev !)
+- Fixed an issue with image paths in some circumstances (thanks @rickdoesdev !)
+- Added parametersizations for "mixed-kebab" and "mixed_snake" which retain original casing but replace spaces (thanks @NSHenry !)
+  - Also added a special "obsidian-cal" parameterization which is the same as "mixed-kebab" with duplicate `-` removed for additional compatibility with the Obsidian Consistent Attachment Location plugin (thanks @NSHenry !)
+- Added lowecase and uppercase options to parameterizations (thanks @redxtech !)
+- Updated Turndown to v7.1.3 (thanks @WeHat !)
+- Updated Readability to v0.5.0 (thanks @WeHat !)
+- Fixed some issues with code block parsing and formatting (thanks @WeHat !)
+- Fixed an issue with some sites missing a proper title (thanks @WeHat !)
+- Fixed an issue with bad base urls causing issues with links in certain circumstances (thanks @WeHat !)
+- Fixed an issue with readability removing everything in certain circumstances (thanks @WeHat !)
+- Send properly configured title to the Obsidian integration (thanks @nekton39 !)
+- Updates to the README (thanks @2gn and @eugenesvk !)
 ## 3.3.0
 - Remove hidden content before exporting (thanks @nhaouari !). This allows you to use a different extension (e.g. Adblock) to hide elements that would otherwise clutter up your export
 - Fixes for Obsidian integration in Safari (thanks @aancw !)

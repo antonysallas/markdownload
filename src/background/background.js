@@ -244,7 +244,6 @@ function getImageFilename(src, options, prependFilePath = true) {
 
   let imagePrefix = options.imagePrefix || "";
 
-  // Ensure the prefix does not duplicate the folder path
   if (prependFilePath) {
     if (imagePrefix.includes("assets/articles/")) {
       imagePrefix = "assets/articles/"; // Ensure no duplicate prefix
@@ -254,11 +253,14 @@ function getImageFilename(src, options, prependFilePath = true) {
   }
 
   if (filename.includes(";base64,")) {
+    // this is a base64 encoded image, so what are we going to do for a filename here?
     filename = "image." + filename.substring(0, filename.indexOf(";"));
   }
 
   let extension = filename.substring(filename.lastIndexOf("."));
   if (extension == filename) {
+    // there is no extension, so we need to figure one out
+    // for now, give it an 'idunno' extension and we'll process it later
     filename = filename + ".idunno";
   }
 
@@ -276,6 +278,8 @@ function textReplace(string, article, disallowedChars = null) {
 
       string = string
         .replace(new RegExp("{" + key + "}", "g"), s)
+        .replace(new RegExp("{" + key + ":lower}", "g"), s.toLowerCase())
+        .replace(new RegExp("{" + key + ":upper}", "g"), s.toUpperCase())
         .replace(new RegExp("{" + key + ":kebab}", "g"), s.replace(/ /g, "-").toLowerCase())
         .replace(new RegExp("{" + key + ":mixed-kebab}", "g"), s.replace(/ /g, "-"))
         .replace(new RegExp("{" + key + ":snake}", "g"), s.replace(/ /g, "_").toLowerCase())
@@ -310,9 +314,9 @@ function textReplace(string, article, disallowedChars = null) {
   const keywordMatches = string.match(keywordRegex);
   if (keywordMatches && keywordMatches.forEach) {
     keywordMatches.forEach((match) => {
-      let separator = match.substring(10, match.length - 1);
+      let seperator = match.substring(10, match.length - 1);
       try {
-        separator = JSON.parse(JSON.stringify(separator).replace(/\\\\/g, "\\"));
+        seperator = JSON.parse(JSON.stringify(seperator).replace(/\\\\/g, "\\"));
       } catch {}
 
       // Ensure a space is added after each comma if the separator is a comma
@@ -320,9 +324,8 @@ function textReplace(string, article, disallowedChars = null) {
         separator = ", ";
       }
 
-      const keywordsString = (article.keywords || []).join(separator);
+      const keywordsString = (article.keywords || []).join(seperator);
       string = string.replace(new RegExp(match.replace(/\\/g, "\\\\"), "g"), keywordsString);
-      console.log("Keywords String: " + string);
     });
   }
 
@@ -363,18 +366,17 @@ async function convertArticleToMarkdown(article, downloadImages = null) {
 function generateValidFileName(title, disallowedChars = null) {
   if (!title) return title;
   else title = title + "";
-
-  // Remove < > : " / \ | ? *
+  // remove < > : " / \ | ? *
   var illegalRe = /[\/\?<>\\:\*\|":]/g;
-
   // and non-breaking spaces (thanks @Licat)
   var name = title
     .replace(illegalRe, "")
     .replace(new RegExp("\u00A0", "g"), " ")
+    // collapse extra whitespace
     .replace(new RegExp(/\s+/, "g"), " ")
+    // remove leading/trailing whitespace that can cause issues when using {pageTitle} in a download path
     .trim();
 
-  // Remove any additional disallowed characters
   if (disallowedChars) {
     for (let c of disallowedChars) {
       if (`[\\^$.|?*+()`.includes(c)) c = `\\${c}`;
@@ -384,22 +386,27 @@ function generateValidFileName(title, disallowedChars = null) {
 
   // Convert spaces and hyphens to underscores to get snake case
   name = name.toLowerCase().replace(/[\s-]+/g, "_");
-
   return name;
 }
 
 async function preDownloadImages(imageList, markdown) {
   const options = await getOptions();
   let newImageList = {};
-
+  // originally, I was downloading the markdown file first, then all the images
+  // however, in some cases we need to download images *first* so we can get the
+  // proper file extension to put into the markdown.
+  // so... here we are waiting for all the downloads and replacements to complete
   await Promise.all(
     Object.entries(imageList).map(
       ([src, filename]) =>
         new Promise((resolve, reject) => {
+          // we're doing an xhr so we can get it as a blob and determine filetype
+          // before the final save
           const xhr = new XMLHttpRequest();
           xhr.open("GET", src);
           xhr.responseType = "blob";
           xhr.onload = async function () {
+            // here's the returned blob
             const blob = xhr.response;
 
             if (options.imageStyle == "base64") {
@@ -411,18 +418,43 @@ async function preDownloadImages(imageList, markdown) {
               reader.readAsDataURL(blob);
             } else {
               let newFilename = filename;
-
               // Ensure that no redundant 'assets/assets/articles/' folder is created
               if (newFilename.includes("assets/assets/articles/")) {
                 newFilename = newFilename.replace("assets/assets/articles/", "assets/articles/");
               }
 
-              // Create an object URL for the blob
+              console.log("newFilename: ", newFilename);
+
+              if (newFilename.endsWith(".idunno")) {
+                // replace any unknown extension with a lookup based on mime type
+                newFilename = filename.replace(".idunno", "." + mimedb[blob.type]);
+
+                // and replace any instances of this in the markdown
+                // remember to url encode for replacement if it's not an obsidian link
+                if (!options.imageStyle.startsWith("obsidian")) {
+                  markdown = markdown.replaceAll(
+                    filename
+                      .split("/")
+                      .map((s) => encodeURI(s))
+                      .join("/"),
+                    newFilename
+                      .split("/")
+                      .map((s) => encodeURI(s))
+                      .join("/")
+                  );
+                } else {
+                  markdown = markdown.replaceAll(filename, newFilename);
+                }
+              }
+
+              // create an object url for the blob (no point fetching it twice)
               const blobUrl = URL.createObjectURL(blob);
 
-              // Add this blob into the new image list
+              // add this blob into the new image list
               newImageList[blobUrl] = newFilename;
 
+              // resolve this promise now
+              // (the file might not be saved yet, but the blob is and replacements are complete)
               resolve();
             }
           };
@@ -437,13 +469,14 @@ async function preDownloadImages(imageList, markdown) {
   return { imageList: newImageList, markdown: markdown };
 }
 
+// function to actually download the markdown file
 async function downloadMarkdown(markdown, title, tabId, imageList = {}, mdClipsFolder = "", mdAssetsFolder = "") {
   // get the options
   const options = await getOptions();
 
   // download via the downloads API
   if (options.downloadMode == "downloadsApi" && browser.downloads) {
-    // create the object URL with markdown data as a blob
+    // create the object url with markdown data as a blob
     const url = URL.createObjectURL(
       new Blob([markdown], {
         type: "text/markdown;charset=utf-8",
@@ -458,36 +491,33 @@ async function downloadMarkdown(markdown, title, tabId, imageList = {}, mdClipsF
       // Ensure the paths are relative by removing leading slashes
       if (mdClipsFolder.startsWith("/")) mdClipsFolder = mdClipsFolder.substring(1);
       if (mdAssetsFolder.startsWith("/")) mdAssetsFolder = mdAssetsFolder.substring(1);
-
-      // Start the download for the markdown file
+      // start the download
       const id = await browser.downloads.download({
         url: url,
         filename: mdClipsFolder + title + ".md",
         saveAs: options.saveAs,
       });
 
-      // Add a listener for the download completion
+      // add a listener for the download completion
       browser.downloads.onChanged.addListener(downloadListener(id, url));
 
-      // Download images (if enabled)
+      // download images (if enabled)
       if (options.downloadImages) {
-        // Get the relative path of the markdown file (if any) for image path
+        // get the relative path of the markdown file (if any) for image path
         let destPath = mdAssetsFolder + title.substring(0, title.lastIndexOf("/"));
         if (destPath && !destPath.endsWith("/")) destPath += "/";
-
         // Ensure destPath is relative
         if (destPath.startsWith("/")) destPath = destPath.substring(1);
-
         // Download each image
         Object.entries(imageList).forEach(async ([src, filename]) => {
-          // Start the download of the image
+          // start the download of the image
           const imgId = await browser.downloads.download({
             url: src,
-            // Set a destination path (relative to md file)
+            // set a destination path (relative to md file)
             filename: destPath ? destPath + filename : filename,
             saveAs: false,
           });
-          // Add a listener (so we can release the blob URL)
+          // add a listener (so we can release the blob url)
           browser.downloads.onChanged.addListener(downloadListener(imgId, src));
         });
       }
@@ -495,8 +525,25 @@ async function downloadMarkdown(markdown, title, tabId, imageList = {}, mdClipsF
       console.error("Download failed", err);
     }
   }
+  // // download via obsidian://new uri
+  // else if (options.downloadMode == 'obsidianUri') {
+  //   try {
+  //     await ensureScripts(tabId);
+  //     let uri = 'obsidian://new?';
+  //     uri += `${options.obsidianPathType}=${encodeURIComponent(title)}`;
+  //     if (options.obsidianVault) uri += `&vault=${encodeURIComponent(options.obsidianVault)}`;
+  //     uri += `&content=${encodeURIComponent(markdown)}`;
+  //     let code = `window.location='${uri}'`;
+  //     await browser.tabs.executeScript(tabId, {code: code});
+  //   }
+  //   catch (error) {
+  //     // This could happen if the extension is not allowed to run code in
+  //     // the page, for example if the tab is a privileged page.
+  //     console.error("Failed to execute script: " + error);
+  //   };
 
-  // Download via content link
+  // }
+  // download via content link
   else {
     try {
       await ensureScripts(tabId);
@@ -757,7 +804,17 @@ async function getArticleFromDom(domString) {
     header.outerHTML = header.outerHTML;
   });
 
+  // Prevent Readability from removing the <html> element if has a 'class' attribute
+  // which matches removal criteria.
+  // Note: The document element is guaranteed to be the HTML tag because the 'text/html'
+  // mime type was used when the DOM was created.
   dom.documentElement.removeAttribute("class");
+
+  function getFormattedDate() {
+    return moment().format("YYYY-MM-DD");
+  }
+
+  console.log(getFormattedDate());
 
   function formatLsDate(date) {
     const day = date.getDate();
@@ -798,7 +855,8 @@ async function getArticleFromDom(domString) {
 
   // Example usage:
   const createdDate = new Date();
-  const lsDate = formatLsDate(createdDate);
+  const lsDate = getFormattedDate();
+  // const lsDate = formatLsDate(createdDate);
   console.log(lsDate); // Outputs: "Sep 3rd, 2024" or similar
 
   // Example usage:
@@ -837,7 +895,7 @@ async function getArticleFromDom(domString) {
   article.pageTitle = dom.title;
   article.lsDate = lsDate;
   article.lsDateTime = lsDateTime;
-  article.location = lsLocation;
+  article.lsLocation = lsLocation;
 
   // and some URL info
   const url = new URL(dom.baseURI);
@@ -859,7 +917,7 @@ async function getArticleFromDom(domString) {
       ?.map((s) => s.trim().toLowerCase().replace(/\s+/g, "-"))
       ?.join(", "); // Add a space after each comma
 
-    // Add all meta tags, so users can do whatever they want
+    // add all meta tags, so users can do whatever they want
     dom.head.querySelectorAll("meta[name][content], meta[property][content]")?.forEach((meta) => {
       const key = meta.getAttribute("name") || meta.getAttribute("property");
       const val = meta.getAttribute("content");
@@ -929,7 +987,7 @@ async function formatMdAssetsFolder(article) {
       .map((s) => generateValidFileName(s, options.disallowedChars))
       .join("/");
 
-    console.log("mdAssetsFolde after valid folder name: " + mdAssetsFolder);
+    console.log("mdAssetsFolder after valid folder name: " + mdAssetsFolder);
 
     // Ensure the folder path ends with a "/"
     if (!mdAssetsFolder.endsWith("/")) mdAssetsFolder += "/";
@@ -937,12 +995,11 @@ async function formatMdAssetsFolder(article) {
 
   return mdAssetsFolder;
 }
-
 async function formatMdClipsFolder(article) {
   let options = await getOptions();
 
   // Define the relative pages folder path
-  let desiredClipsFolder = "pages/";
+  let desiredClipsFolder = "pages/articles/";
 
   let mdClipsFolder = "";
   if (options.downloadMode == "downloadsApi") {
@@ -988,7 +1045,7 @@ async function downloadMarkdownFromContext(info, tab) {
   const { markdown, imageList } = await convertArticleToMarkdown(article);
   // format the mdClipsFolder
   const mdClipsFolder = await formatMdClipsFolder(article);
-  const mdAssetsFolder = await formatMdClipsFolder(article);
+  const mdAssetsFolder = await formatMdAssetsFolder(article);
   await downloadMarkdown(markdown, title, tab.id, imageList, mdClipsFolder, mdAssetsFolder);
 }
 
@@ -1067,7 +1124,7 @@ async function copyMarkdownFromContext(info, tab) {
   try {
     await ensureScripts(tab.id);
 
-    const platformOS = NavigatorID.platform;
+    const platformOS = navigator.platform;
     var folderSeparator = "";
     if (platformOS.indexOf("Win") === 0) {
       folderSeparator = "\\";

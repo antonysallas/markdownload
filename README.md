@@ -42,8 +42,8 @@ You need to do some configurations in order to use this integration.
 
 # External Libraries
 It uses the following libraries:
-- [Readability.js](https://github.com/mozilla/readability) by Mozilla in version from commit [1fde3ac626bc4c2e5e54daa57c57d48b7ed9c574](https://github.com/mozilla/readability/commit/1fde3ac626bc4c2e5e54daa57c57d48b7ed9c574). This library is also used for the Firefox Reader View and it simplifies the page so that only the important parts are clipped. (Licensed under Apache License Version 2.0)
-- [Turndown](https://github.com/mixmark-io/turndown) by Dom Christie in version 7.1.1 is used to convert the simplified HTML (from Readability.js) into markdown. (Licensed under MIT License)
+- [Readability.js](https://github.com/mozilla/readability) by Mozilla version [0.5.0](https://github.com/mozilla/readability/releases/tag/0.5.0). This library is also used for the Firefox Reader View and it simplifies the page so that only the important parts are clipped. (Licensed under Apache License Version 2.0)
+- [Turndown](https://github.com/mixmark-io/turndown) by Dom Christie in version [7.1.3](https://github.com/mixmark-io/turndown/releases/tag/v7.1.3) is used to convert the simplified HTML (from Readability.js) into markdown. (Licensed under MIT License)
 - [Moment.js](https://momentjs.com) version 2.29.4 used to format dates in template variables
 
 # Permissions
@@ -57,7 +57,7 @@ It uses the following libraries:
 The Common Mark icon courtesy of https://github.com/dcurtis/markdown-mark
 
 ## Pricing
-This is an open-source extension I made *for fun*. It's intention is to be completely free.
+This is an open-source extension I made *for fun*. Its intention is to be completely free.
 It's free on Firefox, Edge and Chrome (and other Chromium browsers),
 but unfortunately for Safari there is a yearly developer fee, so I've decided to
 charge a small price for the Safari version to help cover that cost.
@@ -71,25 +71,19 @@ in my hat via the following:
 [![Paypal](https://img.shields.io/badge/paypal-deathau-yellow?style=social&logo=paypal)](https://paypal.me/deathau)
 
 # Version History
-## 3.3.0
-- Remove hidden content before exporting (thanks @nhaouari !). This allows you to use a different extension (e.g. Adblock) to hide elements that would otherwise clutter up your export
-- Fixes for Obsidian integration in Safari (thanks @aancw !)
-- Keep a few more HTML tags that have no markdown equivalent (`u`, `ins`, `del`, `small`, `big`) (thanks @mnaoumov !)
-- Add support for KaTeX formulas parsing (thanks @mnaoumov !)
-- Fixed saving for options when imported from file (and show a little 'saved' indicator)
-- Added a toggle for downloading images in the context menu and popup
-- Added a link to the options in the popup
-- Added some basic error handling to the popup
-- Changes to how html inside code blocks is handled (thanks @mnaumov !)
-- Treat codehilite without specified language as plaintext (thanks @mnaoumov !)
-- Ensure sequential line breaks in `<pre>` are preserved in code blocks (thanks @mnaumov !)
-- Update user guide link in README to point to GitHub
-- Added keyboard shortcuts to copy selection / current tab to obsidian (user-definable in browsers that support that) (thanks @legolasdimir and @likeablob !)
-- Select multiple tabs (hold crtl/cmd) then copy all tab urls as a markdown link list via keyboard shortcut or context menu (thanks @romanPrignon !)
-- Allow users to include custom text such like `{date:YYYY-MM-DD}/`` in their Obsidian Folder Name setting (thanks @likeablob !)
-- Fixed a small typo in the user guide (thanks @devon-research !)
-- Fix for missing headings on sites like Substack (thanks @eactisgrosso !)
-- Add support for websites using MathJax 3 (thanks @LeLocTai !)
-- Moved previous version history into [CHANGELOG.md](./CHANGELOG.md)
+## 3.4.0
+- Fixed extra spaces in titles which could cause issues (thanks @rickdoesdev !)
+- Fixed an issue with image paths in some circumstances (thanks @rickdoesdev !)
+- Added parametersizations for "mixed-kebab" and "mixed_snake" which retain original casing but replace spaces (thanks @NSHenry !)
+  - Also added a special "obsidian-cal" parameterization which is the same as "mixed-kebab" with duplicate `-` removed for additional compatibility with the Obsidian Consistent Attachment Location plugin (thanks @NSHenry !)
+- Added lowecase and uppercase options to parameterizations (thanks @redxtech !)
+- Updated Turndown to v7.1.3 (thanks @WeHat !)
+- Updated Readability to v0.5.0 (thanks @WeHat !)
+- Fixed some issues with code block parsing and formatting (thanks @WeHat !)
+- Fixed an issue with some sites missing a proper title (thanks @WeHat !)
+- Fixed an issue with bad base urls causing issues with links in certain circumstances (thanks @WeHat !)
+- Fixed an issue with readability removing everything in certain circumstances (thanks @WeHat !)
+- Send properly configured title to the Obsidian integration (thanks @nekton39 !)
+- Updates to the README (thanks @2gn and @eugenesvk !)
 
 > Previous version history is recorded in [CHANGELOG.md](./CHANGELOG.md)
