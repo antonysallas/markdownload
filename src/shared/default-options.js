@@ -1,7 +1,7 @@
 // these are the default options
 const defaultOptions = {
   headingStyle: "atx",
-  hr: "___",
+  hr: "- ---",
   bulletListMarker: "-",
   codeBlockStyle: "fenced",
   fence: "```",
@@ -14,29 +14,28 @@ const defaultOptions = {
   // frontmatter:
   //   "---\ncreated: {date:YYYY-MM-DDTHH:mm:ss} (UTC {date:Z})\ntags: [{keywords}]\nsource: {baseURI}\nauthor: {byline}\n---\n\n# {pageTitle}\n\n> ## Excerpt\n> {excerpt}\n\n---",
   frontmatter: `
-    title:: {title}
-    date:: [[{lsDate}]]
-    created-time:: {lsDateTime}
-    tags:: {keywords}
-    source:: {baseURI}
-    author:: [[{byline}]]
-    location:: {lsLocation}
-    ---
+title:: {title}
+date:: [[{lsDate}]]
+created-time:: {lsDateTime}
+tags:: {keywords}
+source:: {baseURI}
+author:: [[{byline}]]
+location:: {lsLocation}
+---
 
-    # {pageTitle}
+- # {pageTitle}
 
-    ## Excerpt
-      > {excerpt}
-    ---\n\n
-    `,
+  - ## Excerpt
+    > {excerpt}
+  - ---\n`,
   backmatter: "",
-  title: "{pageTitle}",
-  includeTemplate: false,
+  title: "{date:YYYYDDMMhhmmss}_{pageTitle}",
+  includeTemplate: true,
   saveAs: false,
-  downloadImages: false,
-  imagePrefix: "{pageTitle}/",
-  mdClipsFolder: null,
-  mdAssetsFolder: null,
+  downloadImages: true,
+  imagePrefix: "assets/articles/",
+  mdClipsFolder: "pages/",
+  mdAssetsFolder: "assets/",
   disallowedChars: "[]#^",
   downloadMode: "downloadsApi",
   turndownEscape: true,

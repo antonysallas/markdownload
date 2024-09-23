@@ -159,18 +159,18 @@ function turndown(content, options, article) {
       code = node.innerHTML;
     }
 
-    var fenceChar = options.fence.charAt(0);
-    var fenceSize = 3;
-    var fenceInCodeRegex = new RegExp("^" + fenceChar + "{3,}", "gm");
+    const fenceChar = options.fence.charAt(0);
+    let fenceSize = 3;
+    const fenceInCodeRegex = new RegExp("^" + fenceChar + "{3,}", "gm");
 
-    var match;
+    let match;
     while ((match = fenceInCodeRegex.exec(code))) {
       if (match[0].length >= fenceSize) {
         fenceSize = match[0].length + 1;
       }
     }
 
-    var fence = repeat(fenceChar, fenceSize);
+    const fence = repeat(fenceChar, fenceSize);
 
     return "\n\n" + fence + language + "\n" + code.replace(/\n$/, "") + "\n" + fence + "\n\n";
   }
@@ -191,7 +191,11 @@ function turndown(content, options, article) {
 
   // handle <pre> as code blocks
   turndownService.addRule("pre", {
-    filter: (node, tdopts) => node.nodeName == "PRE" && (!node.firstChild || node.firstChild.nodeName != "CODE"),
+    filter: (node, tdopts) => {
+      return (
+        node.nodeName == "PRE" && (!node.firstChild || node.firstChild.nodeName != "CODE") && !node.querySelector("img")
+      );
+    },
     replacement: (content, node, tdopts) => {
       return convertToFencedCodeBlock(node, tdopts);
     },
@@ -202,7 +206,7 @@ function turndown(content, options, article) {
   // strip out non-printing special characters which CodeMirror displays as a red dot
   // see: https://codemirror.net/doc/manual.html#option_specialChars
   markdown = markdown.replace(
-    /[\u0000-\u0009\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\ufeff\ufff9-\ufffc]/g,
+    /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u061c\u200b-\u200f\u2028\u2029\ufeff\ufff9-\ufffc]/g,
     ""
   );
 
@@ -273,7 +277,11 @@ function textReplace(string, article, disallowedChars = null) {
       string = string
         .replace(new RegExp("{" + key + "}", "g"), s)
         .replace(new RegExp("{" + key + ":kebab}", "g"), s.replace(/ /g, "-").toLowerCase())
+        .replace(new RegExp("{" + key + ":mixed-kebab}", "g"), s.replace(/ /g, "-"))
         .replace(new RegExp("{" + key + ":snake}", "g"), s.replace(/ /g, "_").toLowerCase())
+        .replace(new RegExp("{" + key + ":mixed_snake}", "g"), s.replace(/ /g, "_"))
+        // For Obsidian Custom Attachment Location plugin, we need to replace spaces with hyphens, but also remove any double hyphens.
+        .replace(new RegExp("{" + key + ":obsidian-cal}", "g"), s.replace(/ /g, "-").replace(/-{2,}/g, "-"))
         .replace(
           new RegExp("{" + key + ":camel}", "g"),
           s.replace(/ ./g, (str) => str.trim().toUpperCase()).replace(/^./, (str) => str.toLowerCase())
@@ -359,8 +367,12 @@ function generateValidFileName(title, disallowedChars = null) {
   // Remove < > : " / \ | ? *
   var illegalRe = /[\/\?<>\\:\*\|":]/g;
 
-  // Remove non-breaking spaces
-  var name = title.replace(illegalRe, "").replace(new RegExp("\u00A0", "g"), " ");
+  // and non-breaking spaces (thanks @Licat)
+  var name = title
+    .replace(illegalRe, "")
+    .replace(new RegExp("\u00A0", "g"), " ")
+    .replace(new RegExp(/\s+/, "g"), " ")
+    .trim();
 
   // Remove any additional disallowed characters
   if (disallowedChars) {
@@ -424,70 +436,6 @@ async function preDownloadImages(imageList, markdown) {
 
   return { imageList: newImageList, markdown: markdown };
 }
-
-// function to actually download the markdown file
-// async function downloadMarkdown(markdown, title, tabId, imageList = {}, mdClipsFolder = "", mdAssetsFolder = "") {
-//   // get the options
-//   const options = await getOptions();
-
-//   // download via the downloads API
-//   if (options.downloadMode == "downloadsApi" && browser.downloads) {
-//     // create the object url with markdown data as a blob
-//     const url = URL.createObjectURL(
-//       new Blob([markdown], {
-//         type: "text/markdown;charset=utf-8",
-//       })
-//     );
-
-//     try {
-//       if (mdClipsFolder && !mdClipsFolder.endsWith("/")) mdClipsFolder += "/";
-//       // start the download
-//       const id = await browser.downloads.download({
-//         url: url,
-//         filename: mdClipsFolder + title + ".md",
-//         saveAs: options.saveAs,
-//       });
-
-//       // add a listener for the download completion
-//       browser.downloads.onChanged.addListener(downloadListener(id, url));
-
-//       // download images (if enabled)
-//       if (options.downloadImages) {
-//         // get the relative path of the markdown file (if any) for image path
-//         const destPath = mdAssetsFolder + title.substring(0, title.lastIndexOf("/"));
-//         if (destPath && !destPath.endsWith("/")) destPath += "/";
-//         Object.entries(imageList).forEach(async ([src, filename]) => {
-//           // start the download of the image
-//           const imgId = await browser.downloads.download({
-//             url: src,
-//             // set a destination path (relative to md file)
-//             filename: destPath ? destPath + filename : filename,
-//             saveAs: false,
-//           });
-//           // add a listener (so we can release the blob url)
-//           browser.downloads.onChanged.addListener(downloadListener(imgId, src));
-//         });
-//       }
-//     } catch (err) {
-//       console.error("Download failed", err);
-//     }
-//   }
-
-//   // }
-//   // download via content link
-//   else {
-//     try {
-//       await ensureScripts(tabId);
-//       const filename = mdClipsFolder + generateValidFileName(title, options.disallowedChars) + ".md";
-//       const code = `downloadMarkdown("${filename}","${base64EncodeUnicode(markdown)}");`;
-//       await browser.tabs.executeScript(tabId, { code: code });
-//     } catch (error) {
-//       // This could happen if the extension is not allowed to run code in
-//       // the page, for example if the tab is a privileged page.
-//       console.error("Failed to execute script: " + error);
-//     }
-//   }
-// }
 
 async function downloadMarkdown(markdown, title, tabId, imageList = {}, mdClipsFolder = "", mdAssetsFolder = "") {
   // get the options
@@ -806,7 +754,10 @@ async function getArticleFromDom(domString) {
     // Readability.js will strip out headings from the dom if certain words appear in their className
     // See: https://github.com/mozilla/readability/issues/807
     header.className = "";
+    header.outerHTML = header.outerHTML;
   });
+
+  dom.documentElement.removeAttribute("class");
 
   function formatLsDate(date) {
     const day = date.getDate();
@@ -874,18 +825,20 @@ async function getArticleFromDom(domString) {
   }
 
   const lsLocation = await getLocation();
-  console.log(lsLocation); // Outputs: "3 September 2024 at 12:55:16 AM" or similar
+  console.log(lsLocation);
 
   // simplify the dom into an article
   const article = new Readability(dom).parse();
 
   // get the base uri from the dom and attach it as important article info
   article.baseURI = dom.baseURI;
+
   // also grab the page title
   article.pageTitle = dom.title;
   article.lsDate = lsDate;
   article.lsDateTime = lsDateTime;
   article.location = lsLocation;
+
   // and some URL info
   const url = new URL(dom.baseURI);
   article.hash = url.hash;
@@ -954,64 +907,6 @@ async function formatTitle(article) {
     .join("/");
   return title;
 }
-
-// async function formatMdClipsFolder(article) {
-//   let options = await getOptions();
-
-//   let mdClipsFolder = "";
-//   if (options.mdClipsFolder && options.downloadMode == "downloadsApi") {
-//     mdClipsFolder = textReplace(options.mdClipsFolder, article, options.disallowedChars);
-//     mdClipsFolder = mdClipsFolder
-//       .split("/")
-//       .map((s) => generateValidFileName(s, options.disallowedChars))
-//       .join("/");
-//     if (!mdClipsFolder.endsWith("/")) mdClipsFolder += "/";
-//   }
-
-//   return mdClipsFolder;
-// }
-
-// async function formatMdAssetsFolder(article) {
-//   let options = await getOptions();
-
-//   let mdAssetsFolder = "";
-//   if (options.mdAssetsFolder && options.downloadMode == "downloadsApi") {
-//     mdAssetsFolder = textReplace(options.mdAssetsFolder, article, options.disallowedChars);
-//     mdAssetsFolder = mdAssetsFolder
-//       .split("/")
-//       .map((s) => generateValidFileName(s, options.disallowedChars))
-//       .join("/");
-//     if (!mdAssetsFolder.endsWith("/")) mdAssetsFolder += "/";
-//   }
-
-//   return mdAssetsFolder;
-// }
-
-// async function formatMdAssetsFolder(article) {
-//   let options = await getOptions();
-
-//   // Define the desired assets folder path
-//   let desiredAssetsFolder = "/Users/asallasd/Logseq/ASB/assets/";
-
-//   let mdAssetsFolder = "";
-//   if (options.downloadMode == "downloadsApi") {
-//     mdAssetsFolder = desiredAssetsFolder;
-
-//     // Replace placeholders in the path if needed
-//     mdAssetsFolder = textReplace(mdAssetsFolder, article, options.disallowedChars);
-
-//     // Generate a valid folder name by replacing disallowed characters
-//     mdAssetsFolder = mdAssetsFolder
-//       .split("/")
-//       .map((s) => generateValidFileName(s, options.disallowedChars))
-//       .join("/");
-
-//     // Ensure the folder path ends with a "/"
-//     if (!mdAssetsFolder.endsWith("/")) mdAssetsFolder += "/";
-//   }
-
-//   return mdAssetsFolder;
-// }
 
 async function formatMdAssetsFolder(article) {
   let options = await getOptions();
@@ -1172,7 +1067,7 @@ async function copyMarkdownFromContext(info, tab) {
   try {
     await ensureScripts(tab.id);
 
-    const platformOS = navigator.platform;
+    const platformOS = NavigatorID.platform;
     var folderSeparator = "";
     if (platformOS.indexOf("Win") === 0) {
       folderSeparator = "\\";
@@ -1194,7 +1089,7 @@ async function copyMarkdownFromContext(info, tab) {
       await browser.tabs.executeScript(tab.id, { code: `copyToClipboard("![](${info.srcUrl})")` });
     } else if (info.menuItemId == "copy-markdown-obsidian") {
       const article = await getArticleFromContent(tab.id, info.menuItemId == "copy-markdown-obsidian");
-      const title = article.title;
+      const title = await formatTitle(article);
       const options = await getOptions();
       const obsidianVault = options.obsidianVault;
       const obsidianFolder = await formatObsidianFolder(article);
@@ -1210,7 +1105,7 @@ async function copyMarkdownFromContext(info, tab) {
       });
     } else if (info.menuItemId == "copy-markdown-obsall") {
       const article = await getArticleFromContent(tab.id, info.menuItemId == "copy-markdown-obsall");
-      const title = article.title;
+      const title = await formatTitle(article);
       const options = await getOptions();
       const obsidianVault = options.obsidianVault;
       const obsidianFolder = await formatObsidianFolder(article);
