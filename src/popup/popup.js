@@ -1,7 +1,7 @@
 // default variables
-let selectedText = null;
-let imageList = null;
-let mdClipsFolder = "";
+var selectedText = null;
+var imageList = null;
+var mdClipsFolder = "";
 
 const darkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
 // set up event handlers
@@ -12,14 +12,12 @@ const cm = CodeMirror.fromTextArea(document.getElementById("md"), {
 });
 cm.on("cursorActivity", (cm) => {
 	const somethingSelected = cm.somethingSelected();
-	let a = document.getElementById("downloadSelection");
+	var a = document.getElementById("downloadSelection");
 
 	if (somethingSelected) {
-		if (a.style.display != "block") {
-			a.style.display = "block";
-		}
-	} else if (a.style.display != "none") {
-		a.style.display = "none";
+		if (a.style.display != "block") a.style.display = "block";
+	} else {
+		if (a.style.display != "none") a.style.display = "none";
 	}
 });
 document.getElementById("download").addEventListener("click", download);
@@ -101,12 +99,10 @@ const showOrHideClipOption = (selection) => {
 };
 
 const clipSite = (id) => {
-	console.log("clipSite called with id:", id);
 	return browser.tabs
 		.executeScript(id, { code: "getSelectionAndDom()" })
 		.then((result) => {
-			console.log("Script executed, result:", result);
-			if (result?.[0]) {
+			if (result && result[0]) {
 				showOrHideClipOption(result[0].selection);
 				let message = {
 					type: "clip",
@@ -116,27 +112,27 @@ const clipSite = (id) => {
 				return browser.storage.sync
 					.get(defaultOptions)
 					.then((options) => {
-						console.log("Options retrieved:", options);
-						return browser.runtime.sendMessage({
+						browser.runtime.sendMessage({
 							...message,
 							...options,
 						});
 					})
 					.catch((err) => {
-						console.error("Error getting options:", err);
+						console.error(err);
 						showError(err);
 						return browser.runtime.sendMessage({
 							...message,
 							...defaultOptions,
 						});
+					})
+					.catch((err) => {
+						console.error(err);
+						showError(err);
 					});
-			} else {
-				console.error("Invalid result from getSelectionAndDom:", result);
-				throw new Error("Invalid result from getSelectionAndDom: " + JSON.stringify(result));
 			}
 		})
 		.catch((err) => {
-			console.error("Error in clipSite:", err);
+			console.error(err);
 			showError(err);
 		});
 };
@@ -170,10 +166,9 @@ browser.storage.sync
 		});
 	})
 	.then((tabs) => {
-		let id = tabs[0].id;
-		let url = tabs[0].url;
-		console.log("Current tab ID:", id);
-		return browser.tabs
+		var id = tabs[0].id;
+		var url = tabs[0].url;
+		browser.tabs
 			.executeScript(id, {
 				file: "/browser-polyfill.min.js",
 			})
@@ -187,7 +182,7 @@ browser.storage.sync
 				return clipSite(id);
 			})
 			.catch((error) => {
-				console.error("Error injecting content script:", error);
+				console.error(error);
 				showError(error);
 			});
 	});
@@ -195,7 +190,7 @@ browser.storage.sync
 // listen for notifications from the background page
 browser.runtime.onMessage.addListener(notify);
 
-// function to send the download message to the background page
+//function to send the download message to the background page
 function sendDownloadMessage(text) {
 	if (text != null) {
 		return browser.tabs
@@ -204,13 +199,14 @@ function sendDownloadMessage(text) {
 				active: true,
 			})
 			.then((tabs) => {
-				let message = {
+				var message = {
 					type: "download",
 					markdown: text,
 					title: document.getElementById("title").value,
 					tab: tabs[0],
 					imageList: imageList,
 					mdClipsFolder: mdClipsFolder,
+					mdAssetsFolder: mdAssetsFolder,
 				};
 				return browser.runtime.sendMessage(message);
 			});
@@ -232,15 +228,17 @@ async function downloadSelection(e) {
 	}
 }
 
-// function that handles messages from the injected script into the site
+//function that handles messages from the injected script into the site
 function notify(message) {
 	// message for displaying markdown
 	if (message.type == "display.md") {
 		// set the values from the message
+		//document.getElementById("md").value = message.markdown;
 		cm.setValue(message.markdown);
 		document.getElementById("title").value = message.article.title;
 		imageList = message.imageList;
 		mdClipsFolder = message.mdClipsFolder;
+		mdAssetsFolder = message.mdAssetsFolder;
 
 		// show the hidden elements
 		document.getElementById("container").style.display = "flex";
