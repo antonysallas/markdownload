@@ -5,3 +5,7 @@ xcode/MarkDownload - Markdown Web Clipper/MarkDownload - Markdown Web Clipper.xc
 node_modules
 *.bak
 *.log
+*.crx
+*.pem
+*.key
+*.crt
